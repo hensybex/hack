@@ -3,11 +3,15 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hack/backend/populate_boxes.dart';
 import 'package:hack/models/atm.dart';
 import 'package:hack/models/office.dart';
+import 'package:hack/screens/filter_dialog.dart';
+import 'package:hack/tools/palette.dart';
 import 'package:hack/tools/providers/displayed_objects.dart';
+import 'package:hack/tools/providers/sorting.dart';
 import 'package:hack/tools/providers/voice.dart';
 import 'package:hive/hive.dart';
 import 'package:latlong2/latlong.dart';
@@ -49,8 +53,11 @@ class _MapScreenState extends State<MapScreen> {
         Provider.of<DisplayedObjectsProvider>(context, listen: false);
     debouncedUpdateMarkers =
         debounce(_updateMarkers, const Duration(seconds: 1));
-    Future.delayed(Duration.zero, _updateMarkers);
-    objects.setCurrentLocation(LatLng(55.7558, 37.6173));
+    Future.delayed(Duration.zero, () {
+      context
+          .read<DisplayedObjectsProvider>()
+          .setCurrentLocation(LatLng(55.7558, 37.6173));
+    });
   }
 
   @override
@@ -98,14 +105,15 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   double computeRadius(double zoomLevel) {
-    return (400 * pow(2, (15 - zoomLevel))).toDouble();
+    print(zoomLevel);
+    return (1000 * pow(4, (15 - zoomLevel))).toDouble();
   }
 
   @override
   Widget build(BuildContext context) {
     final objects =
         Provider.of<DisplayedObjectsProvider>(context, listen: false);
-    final voiceProvider = Provider.of<VoiceProvider>(context, listen: false);
+    //final voiceProvider = Provider.of<VoiceProvider>(context, listen: false);
 
     return Scaffold(
       body: Stack(
@@ -181,18 +189,47 @@ class _MapScreenState extends State<MapScreen> {
                           },
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.mic),
-                        onPressed: () {
-                          voiceProvider.pressVoiceButton();
-                          //voiceProvider.endVoiceInput();
-                        },
-                      )
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              context.watch<SortingProvider>().hasActiveFilters
+                                  ? Colors.blue
+                                  : context.watch<Palette>().darkBackground,
+                        ),
+                        child: IconButton(
+                          icon: SvgPicture.asset(
+                            'assets/icons/filters.svg',
+                            width: 20,
+                            height: 20,
+                          ),
+                          color: Colors.white,
+                          onPressed: () {
+                            final sortingProvider =
+                                context.read<SortingProvider>();
+
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return FilterDialog(
+                                  onApplyFilters: (selectedServices) {
+                                    context
+                                        .read<SortingProvider>()
+                                        .setActiveFilters(selectedServices);
+                                  },
+                                  activeServices:
+                                      sortingProvider.activeServices,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-              Container(
+              /* Container(
                 height: 50,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
@@ -209,7 +246,7 @@ class _MapScreenState extends State<MapScreen> {
                     );
                   },
                 ),
-              ),
+              ), */
             ],
           ),
           Align(
@@ -219,18 +256,80 @@ class _MapScreenState extends State<MapScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  OutlinedButton(
-                    onPressed: () {
-                      context.go('/pin_list');
-                    },
-                    child: const Text('Список объектов'),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: context.watch<Palette>().darkBackground,
+                      borderRadius: BorderRadius.circular(
+                          30.0), // Change 8.0 to your desired radius
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        context.go('/pin_list');
+                      },
+                      child: Row(
+                        children: [
+                          SvgPicture.asset(
+                            'assets/icons/Group.svg',
+                            width: 20,
+                            height: 20,
+                          ),
+                          Text(
+                            'Список',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'VTB Group UI',
+                              fontSize: 20.0,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0,
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
                   ),
-                  OutlinedButton(
-                    onPressed: () {
-                      // TODO: Handle right footer button press
-                    },
-                    child: const Text('Button 2'),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: context.watch<Palette>().darkBackground,
+                      borderRadius: BorderRadius.circular(
+                          30.0), // Change 8.0 to your desired radius
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        context.go('/pin_list');
+                      },
+                      child: Row(
+                        children: [
+                          SvgPicture.asset(
+                            'assets/icons/Group.svg',
+                            width: 20,
+                            height: 20,
+                          ),
+                          Text(
+                            'Купоны',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'VTB Group UI',
+                              fontSize: 20.0,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0,
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
                   ),
+                  /* !voiceProvider.voiceButtonPressed
+                      ? IconButton(
+                          icon: Image.asset('assets/icons/voice.png'),
+                          onPressed: () {
+                            print("VOICE BUTTON PRESSED");
+                            voiceProvider.pressVoiceButton();
+                            //voiceProvider.endVoiceInput();
+                          },
+                        )
+                      : SizedBox(
+                          width: 10,
+                        ), */
                 ],
               ),
             ),
@@ -249,6 +348,7 @@ class _MapScreenState extends State<MapScreen> {
                       double currentZoom = mapController.zoom;
                       mapController.move(
                           mapController.center, currentZoom + 1.0);
+                      _updateMarkers();
                     },
                   ),
                   const SizedBox(height: 10.0),
@@ -259,6 +359,7 @@ class _MapScreenState extends State<MapScreen> {
                       double currentZoom = mapController.camera.zoom;
                       mapController.move(
                           mapController.camera.center, currentZoom - 1.0);
+                      _updateMarkers();
                     },
                   ),
                   const SizedBox(height: 10.0),
@@ -274,23 +375,17 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
-          Positioned(
-            top: 20,
-            left: 20,
-            child: Material(
-              color: Colors.white,
-              elevation: 4,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                child: Text(
-                  "Radius: ${_displayedRadius?.toStringAsFixed(2)} m",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
+          /* AnimatedPositioned(
+            duration: Duration(milliseconds: 300),
+            top: voiceProvider.voiceButtonPressed
+                ? MediaQuery.of(context).size.height / 2 - 25
+                : MediaQuery.of(context).size.height,
+            left: MediaQuery.of(context).size.width / 2 - 25,
+            child: IconButton(
+              icon: Image.asset('assets/icons/voice.png'),
+              onPressed: voiceProvider.pressVoiceButton,
             ),
-          ),
+          ), */
         ],
       ),
     );
@@ -314,15 +409,28 @@ class _MapScreenState extends State<MapScreen> {
 
     locationProvider.atms.forEach((atm) {
       markers.add(Marker(
-        point: LatLng(atm.latitude, atm.longitude),
-        child: const Icon(Icons.atm),
-      ));
+          point: LatLng(atm.latitude, atm.longitude),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SvgPicture.asset(
+                'assets/icons/pin.svg', // Path to the pin SVG
+                width: 50,
+                height: 50,
+              ),
+              SvgPicture.asset(
+                'assets/icons/vtb.svg', // Path to the background SVG
+                width: 12,
+                height: 12,
+              ),
+            ],
+          )));
     });
 
     locationProvider.offices.forEach((office) {
       markers.add(Marker(
         point: LatLng(office.latitude, office.longitude),
-        child: const Icon(Icons.business_center),
+        child: const Icon(Icons.atm),
       ));
     });
 

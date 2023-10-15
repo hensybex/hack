@@ -24,7 +24,6 @@ class BackendService {
   Future<List<Office>> fetchOffices(
       {double? userLat, double? userLng, double? radius}) async {
     const String baseUrl = 'http://194.87.252.63:3000';
-    print("Sending request");
     final response = await http.get(Uri.parse(
         '$baseUrl/offices?userLat=$userLat&userLng=$userLng&radius=$radius'));
 

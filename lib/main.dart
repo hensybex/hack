@@ -4,10 +4,13 @@ import 'package:hack/backend/main_service.dart';
 import 'package:hack/models/atm.dart';
 import 'package:hack/models/office.dart';
 import 'package:hack/models/partner.dart';
+import 'package:hack/models/voice.dart';
 import 'package:hack/screens/not_found.dart';
 import 'package:hack/tools/palette.dart';
 import 'package:hack/tools/providers/displayed_objects.dart';
+import 'package:hack/tools/providers/office_screen_state.dart';
 import 'package:hack/tools/providers/routes.dart';
+import 'package:hack/tools/providers/sorting.dart';
 import 'package:hack/tools/providers/voice.dart';
 import 'package:hack/tools/router.dart';
 import 'package:hive/hive.dart';
@@ -40,9 +43,11 @@ Future<void> main() async {
   Hive.registerAdapter(ServiceAdapter());
   Hive.registerAdapter(PartnerAdapter());
   Hive.registerAdapter(CoordinatesAdapter());
+  //Hive.registerAdapter(VoiceRecordingAdapter());
 
   await Hive.openBox<Atm>('atms');
   await Hive.openBox<Office>('offices');
+  //await Hive.openBox<VoiceRecording>('voices');
 
   //await populateHiveBoxes(55.7558, 37.6173, 400.0);
 
@@ -96,8 +101,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         providers: [
           ChangeNotifierProvider(
               create: (context) => DisplayedObjectsProvider()),
-          ChangeNotifierProvider(create: (context) => VoiceProvider()),
+          //ChangeNotifierProvider(create: (context) => VoiceProvider()),
           ChangeNotifierProvider(create: (context) => RouteProvider()),
+          ChangeNotifierProvider(create: (context) => ButtonProvider()),
+          ChangeNotifierProvider(create: (context) => SortingProvider()),
           Provider(
             create: (context) => Palette(),
           ),

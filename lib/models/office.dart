@@ -107,9 +107,7 @@ class Office {
       kep: json['kep'] as bool,
       myBranch: json['myBranch'] as bool,
       radiusDistance: json['radius_distance'] as double,
-      service: (json['services'] as List)
-          .map((e) => Hours.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      service: List<String>.from(json['services']),
     );
   }
 }

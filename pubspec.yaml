@@ -27,6 +27,13 @@ dependencies:
   gradient_borders: ^1.0.0
   flutter_svg: ^2.0.7
   cached_network_image: ^3.2.3
+  web_socket_channel: ^2.4.0
+  flutter_sound: ^9.2.13
+  path_provider: ^2.1.1
+  flutter_voice_recorder: ^0.0.2
+
+dependency_overrides:
+  logger: ^2.0.1
 
 dev_dependencies:
   flutter_test:

@@ -7,6 +7,7 @@ import 'package:hack/models/office.dart';
 import 'package:hack/tools/image_slider.dart';
 import 'package:hack/tools/palette.dart';
 import 'package:hack/tools/providers/displayed_objects.dart';
+import 'package:hack/tools/providers/office_screen_state.dart';
 import 'package:hack/tools/providers/routes.dart';
 import 'package:hive/hive.dart';
 import 'package:latlong2/latlong.dart';
@@ -91,6 +92,7 @@ class _OfficeScreenState extends State<OfficeScreen> {
           kep: false,
           myBranch: false,
           radiusDistance: 0.0,
+          service: [],
         );
         return defaultOffice;
       },
@@ -245,7 +247,9 @@ class _OfficeScreenState extends State<OfficeScreen> {
                           borderRadius: BorderRadius.circular(26.0),
                         ),
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            context.go('/talons/${widget.officeId}');
+                          },
                           child: const Text(
                             'Взять талон',
                             style: TextStyle(
@@ -260,7 +264,7 @@ class _OfficeScreenState extends State<OfficeScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('Расписание'),
+            /* const Text('Расписание'),
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -279,115 +283,202 @@ class _OfficeScreenState extends State<OfficeScreen> {
             Container(
               height: 200,
               color: Colors.blue,
-            ),
+            ), */
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(onPressed: () {}, child: const Text('Описание')),
-                ElevatedButton(onPressed: () {}, child: const Text('Услуги')),
-              ],
+            Consumer<ButtonProvider>(
+              builder: (context, buttonProvider, child) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        primary: buttonProvider.activeButton == 0
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
+                      onPressed: () {
+                        buttonProvider.setActiveButton(0);
+                      },
+                      child: const Text('Описание'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        primary: buttonProvider.activeButton == 1
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
+                      onPressed: () {
+                        buttonProvider.setActiveButton(1);
+                      },
+                      child: const Text('Услуги'),
+                    ),
+                  ],
+                );
+              },
             ),
-            const SizedBox(height: 16),
-            Divider(
-              color: context.watch<Palette>().dividerColor,
-              thickness: 2,
+            Consumer<ButtonProvider>(
+              builder: (context, buttonProvider, child) {
+                if (buttonProvider.activeButton == 0) {
+                  return Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      Divider(
+                        color: context.watch<Palette>().dividerColor,
+                        thickness: 2,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Обслуживание',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'VTB Group UI',
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      office!.openHoursIndividual[0].days != 'Не обслуживает ФЛ'
+                          ? customRow('assets/icons/people.svg',
+                              "Физические лица", "Все клиенты банка", null)
+                          : const SizedBox.shrink(),
+                      office!.openHours[0].days != 'Не обслуживает ЮЛ'
+                          ? customRow(
+                              'assets/icons/people.svg',
+                              "Юридические лица",
+                              "Юридические клиенты банка",
+                              null)
+                          : const SizedBox.shrink(),
+                      const SizedBox(height: 16),
+                      customRow(
+                          'assets/icons/premium.svg',
+                          "Зона премиального обслуживания",
+                          'Клиенты с пакетом "Привелегия"',
+                          null),
+                      const SizedBox(height: 16),
+                      Divider(
+                        color: context.watch<Palette>().dividerColor,
+                        thickness: 2,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Доступная среда',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'VTB Group UI',
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      customRow('assets/icons/limited.svg',
+                          "Доступно для маломобильных граждан", null, null),
+                      const SizedBox(height: 16),
+                      Divider(
+                        color: context.watch<Palette>().dividerColor,
+                        thickness: 2,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Ближайшая станция метро',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'VTB Group UI',
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      customRow(
+                          'assets/icons/train.svg',
+                          extractMetro(office!.metroStation)[1],
+                          extractMetro(office!.metroStation)[0],
+                          office!.distance),
+                      const SizedBox(height: 16),
+                      Divider(
+                        color: context.watch<Palette>().dividerColor,
+                        thickness: 2,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Режим работы',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'VTB Group UI',
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      office!.openHoursIndividual[0].days != 'Не обслуживает ФЛ'
+                          ? customRow(
+                              'assets/icons/working_hours.svg',
+                              "Для физических лиц",
+                              office!.openHoursIndividual[0].hours,
+                              null)
+                          : const SizedBox.shrink(),
+                      office!.openHours[0].days != 'Не обслуживает ЮЛ'
+                          ? customRow(
+                              'assets/icons/working_hours.svg',
+                              "Для юридических лиц",
+                              office!.openHours[0].hours,
+                              null)
+                          : const SizedBox.shrink(),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      Divider(
+                        color: context.watch<Palette>().dividerColor,
+                        thickness: 2,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Обслуживание',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'VTB Group UI',
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      SizedBox(
+                        height: 16,
+                      ),
+                      Wrap(
+                        spacing: 8.0, // space between adjacent chips
+                        runSpacing: 16.0, // space between lines
+                        children: office!.service.map((serviceText) {
+                          return Container(
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8.0),
+                              color: const Color(0xFF282B32),
+                            ),
+                            child: Text(
+                              serviceText,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'VTB Group UI',
+                                fontSize: 20.0,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Обслуживание',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'VTB Group UI',
-                fontSize: 20.0,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0,
-              ),
-            ),
-            const SizedBox(height: 8),
-            office!.openHoursIndividual[0].days != 'Не обслуживает ФЛ'
-                ? customRow('assets/icons/people.svg', "Физические лица",
-                    "Все клиенты банка", null)
-                : const SizedBox.shrink(),
-            office!.openHours[0].days != 'Не обслуживает ЮЛ'
-                ? customRow('assets/icons/people.svg', "Юридические лица",
-                    "Юридические клиенты банка", null)
-                : const SizedBox.shrink(),
-            const SizedBox(height: 16),
-            customRow(
-                'assets/icons/premium.svg',
-                "Зона премиального обслуживания",
-                'Клиенты с пакетом "Привелегия"',
-                null),
-            const SizedBox(height: 16),
-            Divider(
-              color: context.watch<Palette>().dividerColor,
-              thickness: 2,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Доступная среда',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'VTB Group UI',
-                fontSize: 20.0,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0,
-              ),
-            ),
-            const SizedBox(height: 8),
-            customRow('assets/icons/limited.svg',
-                "Доступно для маломобильных граждан", null, null),
-            const SizedBox(height: 16),
-            Divider(
-              color: context.watch<Palette>().dividerColor,
-              thickness: 2,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Ближайшая станция метро',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'VTB Group UI',
-                fontSize: 20.0,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0,
-              ),
-            ),
-            const SizedBox(height: 8),
-            customRow(
-                'assets/icons/train.svg',
-                extractMetro(office!.metroStation)[1],
-                extractMetro(office!.metroStation)[0],
-                office!.distance),
-            const SizedBox(height: 16),
-            Divider(
-              color: context.watch<Palette>().dividerColor,
-              thickness: 2,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Режим работы',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'VTB Group UI',
-                fontSize: 20.0,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0,
-              ),
-            ),
-            const SizedBox(height: 8),
-            office!.openHoursIndividual[0].days != 'Не обслуживает ФЛ'
-                ? customRow(
-                    'assets/icons/working_hours.svg',
-                    "Для физических лиц",
-                    office!.openHoursIndividual[0].hours,
-                    null)
-                : const SizedBox.shrink(),
-            office!.openHours[0].days != 'Не обслуживает ЮЛ'
-                ? customRow('assets/icons/working_hours.svg',
-                    "Для юридических лиц", office!.openHours[0].hours, null)
-                : const SizedBox.shrink(),
           ],
         ),
       ),

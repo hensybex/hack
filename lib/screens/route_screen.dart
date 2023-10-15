@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hack/backend/main_service.dart';
 import 'package:hack/models/office.dart';
+import 'package:hack/models/partner.dart';
 import 'package:hack/tools/palette.dart';
 import 'package:hack/tools/providers/displayed_objects.dart';
 import 'package:hack/tools/providers/routes.dart';
@@ -58,6 +60,7 @@ class _RouteScreenState extends State<RouteScreen> {
           kep: false,
           myBranch: false,
           radiusDistance: 0.0,
+          service: [],
         );
         return defaultOffice;
       },
@@ -67,8 +70,38 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   void initState() {
     super.initState();
+    final objects =
+        Provider.of<DisplayedObjectsProvider>(context, listen: false);
     office = getOfficeById(widget.officeId);
-    print('Retrieved Office: $office');
+
+    // Use an async function for initialization
+    _initializeData(objects);
+  }
+
+  Future<void> _initializeData(DisplayedObjectsProvider objects) async {
+    BackendService service = BackendService();
+    final partnersBox = await Hive.openBox<Partner>('partners');
+
+    // After fetching the data from the service
+    List<Partner> fetchedPartners = await service.fetchPartners();
+    for (Partner partner in fetchedPartners) {
+      partnersBox.add(partner);
+    }
+
+    // Retrieve the partners from the Hive box
+    List<Partner> partners = partnersBox.values.toList();
+
+    // Create markers based on the retrieved partners
+    List<Marker> markersAds = partners.map((partner) {
+      return Marker(
+        point:
+            LatLng(partner.coordinates.latitude, partner.coordinates.longitude),
+        child: const Icon(Icons.atm),
+      );
+    }).toList();
+
+    // Set the markers into the DisplayedObjectsProvider
+    objects.setMarkers(markersAds);
   }
 
   @override
@@ -373,7 +406,24 @@ class _RouteScreenState extends State<RouteScreen> {
     );
   }
 
+  DateTime concatenateWithMilliseconds(double milliseconds) {
+    return DateTime.now().add(Duration(milliseconds: milliseconds.toInt()));
+  }
+
   Widget _buildPreStartState() {
+    final List<IconDoubleData> iconDoubleList = [
+      IconDoubleData(
+          "assets/icons/car.svg",
+          context
+              .watch<RouteProvider>()
+              .travelTimes[0]!), // Replace with actual text or function call
+      IconDoubleData("assets/icons/bike.svg",
+          context.watch<RouteProvider>().travelTimes[1]!),
+      IconDoubleData("assets/icons/foot.svg",
+          context.watch<RouteProvider>().travelTimes[2]!),
+    ];
+    DateTime resulting_time = concatenateWithMilliseconds(
+        iconDoubleList[context.watch<RouteProvider>().selectedRoute!].time);
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
@@ -427,7 +477,7 @@ class _RouteScreenState extends State<RouteScreen> {
               ),
             ),
             Text(
-              'Выйдете из отделения в ' + ,
+              'Выйдете из отделения в $resulting_time',
               style: TextStyle(
                 color: context.watch<Palette>().greyText,
                 fontFamily: 'VTB Group UI',
@@ -480,6 +530,23 @@ class _RouteScreenState extends State<RouteScreen> {
         ),
       ),
     );
+  }
+
+  List<Marker> getMarkers() {
+    final Box<Partner> partnersBox = Hive.box<Partner>('partners');
+    List<Marker> markers = [];
+
+    for (int i = 0; i < partnersBox.length; i++) {
+      final Partner partner =
+          partnersBox.getAt(i)!; // Retrieve partner from the box
+      markers.add(Marker(
+        point:
+            LatLng(partner.coordinates.latitude, partner.coordinates.longitude),
+        child: const Icon(Icons.atm),
+      ));
+    }
+
+    return markers;
   }
 
   Future<void> launchUrl(String urlString) async {

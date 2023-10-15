@@ -35,13 +35,14 @@ class OfficeAdapter extends TypeAdapter<Office> {
       kep: fields[15] as bool,
       myBranch: fields[16] as bool,
       radiusDistance: fields[17] as double,
+      service: (fields[18] as List).cast<String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Office obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -77,7 +78,9 @@ class OfficeAdapter extends TypeAdapter<Office> {
       ..writeByte(16)
       ..write(obj.myBranch)
       ..writeByte(17)
-      ..write(obj.radiusDistance);
+      ..write(obj.radiusDistance)
+      ..writeByte(18)
+      ..write(obj.service);
   }
 
   @override

@@ -5,6 +5,7 @@ import 'package:hack/screens/not_found.dart';
 import 'package:hack/screens/office_screen.dart';
 import 'package:hack/screens/pin_list.dart';
 import 'package:hack/screens/route_screen.dart';
+import 'package:hack/screens/talons_screen.dart';
 
 final routes = [
   GoRoute(path: '/', builder: (context, state) => const MapScreen()),
@@ -15,6 +16,13 @@ final routes = [
     builder: (context, state) {
       final officeId = int.parse(state.pathParameters['office_id']!);
       return OfficeScreen(officeId: officeId);
+    },
+  ),
+  GoRoute(
+    path: '/talons/:office_id',
+    builder: (context, state) {
+      final officeId = int.parse(state.pathParameters['office_id']!);
+      return TalonsScreen(officeId: officeId.toString());
     },
   ),
   GoRoute(

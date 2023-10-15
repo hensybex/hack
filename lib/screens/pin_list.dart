@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hack/screens/filter_dialog.dart';
 import 'package:hack/tools/palette.dart';
 import 'package:hack/tools/providers/displayed_objects.dart';
+import 'package:hack/tools/providers/sorting.dart';
 import 'package:provider/provider.dart';
 
 class PinListScreen extends StatefulWidget {
@@ -27,15 +30,20 @@ class _PinListScreenState extends State<PinListScreen> {
             context.go('/'); // Navigate back to Map screen.
           },
         ),
-        title: const Center(child: Text('List')),
+        title: const Center(child: Text('Список объектов')),
         elevation: 0,
       ),
       body: Column(
         children: [
           _buildSearchWidget(),
           Expanded(
-            // Set the initial data as Offices, you can change this as required
-            child: _buildList(data: displayedObjectsProvider.offices),
+            child: Consumer<SortingProvider>(
+              builder: (context, sorter, child) {
+                var sortedData =
+                    sorter.sortOffices(displayedObjectsProvider.offices);
+                return _buildList(data: sortedData);
+              },
+            ),
           ),
         ],
       ),
@@ -80,13 +88,34 @@ class _PinListScreenState extends State<PinListScreen> {
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: context.watch<Palette>().darkBackground,
+                    color: context.watch<SortingProvider>().hasActiveFilters
+                        ? Colors.blue
+                        : context.watch<Palette>().darkBackground,
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.filter_list),
+                    icon: SvgPicture.asset(
+                      'assets/icons/filters.svg',
+                      width: 20,
+                      height: 20,
+                    ),
                     color: Colors.white,
                     onPressed: () {
-                      // Open filters dialog or another action
+                      final sortingProvider = context.read<SortingProvider>();
+
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return FilterDialog(
+                            onApplyFilters: (selectedServices) {
+                              // Set the selected services as active filters in SortingProvider
+                              context
+                                  .read<SortingProvider>()
+                                  .setActiveFilters(selectedServices);
+                            },
+                            activeServices: sortingProvider.activeServices,
+                          );
+                        },
+                      );
                     },
                   ),
                 ),
